@@ -1,0 +1,102 @@
+#Una vez te conectas por primera vez por ssh a la raspberrypi...
+
+sudo apt-get update
+
+sudo apt-get upgrade
+
+#RAID1
+
+sudo apt-get install mdadm
+
+sudo fdisk /dev/sda
+
+[m] for help
+[o]
+[n]
+[p]
+[1]
+[Enter]
+[Enter]
+[w]
+
+sudo fdisk /dev/sdb
+
+[m] for help
+[o]
+[n]
+[p]
+[1]
+[Enter]
+[Enter]
+[w]
+
+sudo mkfs.exfat /dev/sda1
+
+sudo mkfs.exfat /dev/sdb1
+
+sudo mdadm --create --verbose /dev/md0 --level=mirror --raid-devices=2 /dev/sda1 /dev/sdb1
+
+sudo -i  
+
+mdadm --detail --scan >> /etc/mdadm/mdadm.conf  
+
+sudo mkfs.exfat /dev/md0
+
+sudo mkdir /mnt/raid1
+
+sudo chown pi:pi /mnt/raid1
+
+sudo mount /dev/md0 /mnt/raid1
+
+ls -la /mnt/raid
+
+df -h -x devtmpfs -x tmpfs
+
+sudo update-initramfs -u
+
+blkid
+
+#Copy UUID
+
+sudo vi /etc/fstab
+
+UUID=(my-uuid) /mnt/raid1 exfat defaults,noatime,uid=1000,gid=1000 0 0  
+
+sudo reboot
+
+#NAS
+
+sudo apt-get install samba samba-common-bin
+
+sudo smbpasswd -a pi
+tucontraseña
+
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak  
+sudo nano /etc/samba/smb.conf
+
+# NAS Share Block  
+[NAS]  
+path = /mnt/raidx  
+comment = RPI4 RAID0 NAS Server  
+volume = NAS-Server  
+valid users = pi  
+read only = NO  
+guest ok = NO  
+public = NO  
+writable = YES  
+browsable = YES  
+### -rwxr--r--  
+create mask = 0744  
+### -rwxr-xr-x  
+directory mask = 0755  
+### All hosts on the 192.168.1 subnet allowed:  
+hosts allow = 192.168.1.
+
+sudo service smbd restart
+
+sudo reboot
+
+#Conectarte desde el explorador de Windows
+\\raspberrypi.local\NAS
+usuario: pi
+contraseña: tucontraseña
